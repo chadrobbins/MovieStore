@@ -1,0 +1,38 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+}
+section {
+    font-family: Arial, Helvetica, sans-serif;
+}
+h1 {
+    color: navy;
+}
+label {
+    width: 10em;
+    padding-right: 1em;
+    float: left;
+}
+input[type="text"] {  /* An attribute selector */
+    float: left;
+    width: 15em;
+    margin-bottom: .5em;
+}
+input[type="submit"] {  /* An attribute selector */
+    float: left;
+    margin-bottom: .5em;
+}
+br {
+    clear: left;
+}
+.error {
+    color: red;
+    font-weight: bold;
+}
+.containter {
+    max-width: 1024px;
+    /*Apply a border to your container using the shorthand method*/
+    border: 7px solid rgb(4, 6, 133);
+    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5);
+    padding: 15px;
+    margin: 0 auto;
+}
