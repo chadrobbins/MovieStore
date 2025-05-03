@@ -4,12 +4,11 @@
  */
 package com.movie.servlets;
 
-
 /**
  *
  * @author chadrobbins
  */
-// File: src/java/controller/UserServlet.java
+
 
 import com.movie.classes.User;
 import jakarta.persistence.*;
@@ -18,8 +17,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 
-@WebServlet("/user")
-public class UserServlet extends HttpServlet {
+@WebServlet("/register")
+public class RegisterServlet extends HttpServlet {
     private EntityManagerFactory emf;
 
     @Override
@@ -31,34 +30,41 @@ public class UserServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        String name = request.getParameter("name");
         String email = request.getParameter("email");
         String password = request.getParameter("password");
 
         EntityManager em = emf.createEntityManager();
 
         try {
-            // Login logic
-            TypedQuery<User> query = em.createQuery(
-                "SELECT u FROM User u WHERE u.email = :email AND u.password = :password", User.class);
+            // Check if the user already exists
+            TypedQuery<User> query = em.createQuery("SELECT u FROM User u WHERE u.email = :email", User.class);
             query.setParameter("email", email);
-            query.setParameter("password", password);
+            if (!query.getResultList().isEmpty()) {
+                request.setAttribute("error", "An account with this email already exists.");
+                request.getRequestDispatcher("register.jsp").forward(request, response);
+                return;
+            }
 
-            User user = query.getSingleResult();
+            // Create and persist new user
+            User user = new User();
+            user.setName(name);
+            user.setEmail(email);
+            user.setPassword(password);
 
-            // If login successful, save user in session
+            em.getTransaction().begin();
+            em.persist(user);
+            em.getTransaction().commit();
+
+            // Auto login and redirect to home
             HttpSession session = request.getSession();
             session.setAttribute("user", user);
-
             response.sendRedirect("home");
 
-        } catch (NoResultException e) {
-            // User not found
-            request.setAttribute("error", "Invalid email or password.");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();
-            request.setAttribute("error", "Login error. Try again.");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
+            request.setAttribute("error", "Error registering user.");
+            request.getRequestDispatcher("register.jsp").forward(request, response);
         } finally {
             em.close();
         }

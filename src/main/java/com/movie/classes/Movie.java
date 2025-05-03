@@ -3,25 +3,39 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.movie.classes;
+import jakarta.persistence.*;
 
-/**
- *
- * @author chadrobbins
- */
-
-
+@Entity
+@Table(name = "movies")
 public class Movie {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column(name = "title")
     private String title;
+
+    @Column(name = "genre")
     private String genre;
+
+    @Column(name = "description", length = 1000)
     private String description;
+
+    @Column(name = "price")
     private double price;
+
+    @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "rating")
     private double rating;
+
+    @Column(name = "quantity")
+    private int quantity;
 
     public Movie() {}
 
-    public Movie(int id, String title, String genre, String description, double price, String imageUrl, double rating) {
+    public Movie(int id, String title, String genre, String description, double price, String imageUrl, double rating, int quantity) {
         this.id = id;
         this.title = title;
         this.genre = genre;
@@ -29,9 +43,10 @@ public class Movie {
         this.price = price;
         this.imageUrl = imageUrl;
         this.rating = rating;
+        this.quantity = quantity;
     }
 
-    // Getters and Setters
+    // Getters and setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
 
@@ -52,4 +67,7 @@ public class Movie {
 
     public double getRating() { return rating; }
     public void setRating(double rating) { this.rating = rating; }
+
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
 }

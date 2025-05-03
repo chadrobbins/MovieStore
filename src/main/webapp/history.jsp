@@ -48,6 +48,8 @@
         <a href="checkout.jsp">Checkout</a>
         <a href="history.jsp" class="active">My Movies</a>
         <a href="logout.jsp">Logout</a>
+        
+        <a href="admin.jsp">Admin</a>
     </nav>
 </header>
 

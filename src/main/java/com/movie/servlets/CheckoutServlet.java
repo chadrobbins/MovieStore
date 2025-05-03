@@ -12,73 +12,86 @@ package com.movie.servlets;
 
 import com.movie.classes.Movie;
 import com.movie.classes.User;
-
-import javax.servlet.*;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.*;
+import jakarta.persistence.*;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+import com.movie.classes.Purchase;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.util.List;
+
 
 @WebServlet("/checkout")
 public class CheckoutServlet extends HttpServlet {
-    
-    private String jdbcURL = "jdbc:mysql://localhost:3306/movie_catalog";
-    private String jdbcUsername = "root";
-    private String jdbcPassword = "Rdahc3392!";
-    
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    private EntityManagerFactory emf;
 
-        String name = request.getParameter("name");
-        String card = request.getParameter("card");
-        String exp = request.getParameter("exp");
-        String cvv = request.getParameter("cvv");
+    @Override
+    public void init() throws ServletException {
+        emf = Persistence.createEntityManagerFactory("moviePU");
+    }
 
-        HttpSession session = request.getSession();
-        List<Movie> cart = (List<Movie>) session.getAttribute("cart");
+@Override
+protected void doPost(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
 
-        // Simple validation
-        if (name == null || card == null || exp == null || cvv == null || cart == null || cart.isEmpty()) {
-            request.setAttribute("error", "Please complete all fields and add items to your cart.");
-            request.getRequestDispatcher("checkout.jsp").forward(request, response);
-            return;
+    System.out.println("🔵 CheckoutServlet POST called!"); 
+
+    HttpSession session = request.getSession();
+    User user = (User) session.getAttribute("user");
+    List<Movie> cart = (List<Movie>) session.getAttribute("cart");
+
+    if (user != null && cart != null && !cart.isEmpty()) {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+
+        try {
+            tx.begin();
+
+            double total = 0.0;
+            for (Movie movie : cart) {
+                Movie dbMovie = em.find(Movie.class, movie.getId());
+
+                if (dbMovie != null && dbMovie.getQuantity() > 0) {
+                    dbMovie.setQuantity(dbMovie.getQuantity() - 1);
+                    em.persist(new Purchase(user, dbMovie));
+                    total += dbMovie.getPrice();
+                    System.out.println("✅ Purchased movie: " + dbMovie.getTitle());
+                } else {
+                    System.out.println("⚠️ Movie not found or out of stock: " + movie.getTitle());
+                }
+            }
+
+            tx.commit();
+            System.out.println("✅ Transaction committed!");
+
+            // Set confirmation data
+            session.removeAttribute("cart");
+
+            request.setAttribute("totalPrice", total);
+            request.setAttribute("dueDate", java.time.LocalDate.now().plusDays(5).toString());
+            request.setAttribute("purchasedMovies", cart);
+
+            request.getRequestDispatcher("confirmation.jsp").forward(request, response);
+
+        } catch (Exception e) {
+            if (tx.isActive()) tx.rollback();
+            System.out.println("❌ ERROR during checkout: " + e.getMessage());
+            e.printStackTrace();
+            throw new ServletException("Checkout failed", e);
+        } finally {
+            em.close();
         }
-
-        // In a real app: save the order to DB, charge card, etc.
-
-        // Clear cart after "purchase"
-        session.removeAttribute("cart");
-
-        // Store success message and name
-        request.setAttribute("customerName", name);
-        request.setAttribute("purchasedMovies", cart);
-
-        request.getRequestDispatcher("confirmation.jsp").forward(request, response);
-        
-        
-        User user = (User) session.getAttribute("user");
-
-if (user != null && cart != null && !cart.isEmpty()) {
-    try (Connection conn = DriverManager.getConnection(jdbcURL, jdbcUsername, jdbcPassword)) {
-        String sql = "INSERT INTO purchases (user_id, movie_id) VALUES (?, ?)";
-        PreparedStatement stmt = conn.prepareStatement(sql);
-        for (Movie m : cart) {
-            stmt.setInt(1, user.getId());
-            stmt.setInt(2, m.getId());
-            stmt.addBatch();
-        }
-        stmt.executeBatch();
-    } catch (Exception e) {
-        e.printStackTrace();
+    } else {
+        System.out.println("⚠️ User not logged in or cart is empty!");
+        response.sendRedirect("checkout.jsp?error=missingData");
     }
 }
 
+
+    @Override
+    public void destroy() {
+        if (emf != null && emf.isOpen()) {
+            emf.close();
+        }
     }
-    
-    
 }
-
-

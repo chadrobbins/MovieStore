@@ -4,12 +4,16 @@
     Author     : chadrobbins
 --%>
 
-<%@ page import="javax.servlet.http.HttpSession" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ include file="header.jsp" %>
+
+
+
 <%
-    HttpSession session = request.getSession(false);
     if (session != null) {
-        session.invalidate(); // Destroys session and logs out user
+        session.invalidate();
     }
-    response.sendRedirect("index.jsp");
+    response.sendRedirect("home");
 %>
 
+<%@ include file="footer.jsp" %>
